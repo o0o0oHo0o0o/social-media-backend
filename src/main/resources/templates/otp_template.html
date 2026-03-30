@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 480px;
+            background: #fff;
+            margin: 40px auto;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #007bff;
+        }
+        .otp {
+            text-align: center;
+            font-size: 30px;
+            font-weight: bold;
+            color: #007bff;
+            letter-spacing: 3px;
+            margin: 20px 0;
+        }
+        p {
+            line-height: 1.6;
+        }
+        .footer {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Mã xác thực OTP</h2>
+    <p>Xin chào,</p>
+    <p>Mã OTP của bạn là:</p>
+    <div class="otp">{{OTP}}</div>
+    <p>Mã này sẽ <b>hết hạn sau {{EXPIRY}} phút</b>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
+    <p>Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.</p>
+    <div class="footer">
+        Trân trọng,<br><b>Đội ngũ hỗ trợ</b>
+    </div>
+</div>
+</body>
+</html>

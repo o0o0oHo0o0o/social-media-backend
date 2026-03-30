@@ -1,0 +1,130 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: social-media-app
+    frontend: ${FRONTEND_URL}
+
+  # --- RABBITMQ & STOMP ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin123
+    stomp:
+      port: 1613
+
+  # --- DATABASE ---
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  # --- JPA & HIBERNATE ---
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServer2016Dialect
+        format_sql: true
+        transaction:
+          jta:
+            platform: org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform
+
+  # --- REDIS ---
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
+  # --- MAIL ---
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from: ${MAIL_USERNAME}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # --- OAUTH2 ---
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+          facebook:
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
+            scope:
+              - email
+              - public_profile
+    cors:
+      allowed-origins:
+        - "http://localhost:5180"
+        - "http://localhost:3000"
+        - "http://localhost:5173"
+      allowed-methods:
+        - "GET"
+        - "POST"
+        - "PUT"
+        - "DELETE"
+        - "OPTIONS"
+        - "PATCH"
+      allowed-headers:
+        - "*"
+      exposed-headers:
+        - "Set-Cookie"
+        - "Authorization"
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# --- MINIO ---
+minio:
+  endpoint: ${MINIO_URL}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket-name: social-media-images
+
+# --- JWT ---
+jwt:
+  secret: ${JWT_SECRET}
+  access:
+    token:
+      ttl: ${JWT_ACCESS_EXPIRATION}
+      cookie:
+        name: ${ACCESS_TOKEN_COOKIE_NAME}
+  refresh:
+    token:
+      ttl: ${JWT_REFRESH_EXPIRATION}
+      cookie:
+        name: ${REFRESH_TOKEN_COOKIE_NAME}
+
+# --- TWILIO ---
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID}
+  auth-token: ${TWILIO_AUTH_TOKEN}
+  phone-number: ${TWILIO_PHONE_NUMBER}
+  messaging-service-sid: "MG_DUMMY_ID_FOR_DEV_ENV"
+
+recaptcha:
+  secret-key: ${RECAPTCHA_SECRET}
+  verify-url: ${RECAPTCHA_URL}
