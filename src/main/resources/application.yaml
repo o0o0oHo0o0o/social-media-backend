@@ -12,8 +12,10 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST}
     stomp:
       port: ${RABBITMQ_STOMP_PORT}
+      ssl-enabled: ${RABBITMQ_STOMP_SSL_ENABLED:true}
 
   # --- DATABASE ---
   datasource:
@@ -128,3 +130,8 @@ twilio:
 recaptcha:
   secret-key: ${RECAPTCHA_SECRET}
   verify-url: ${RECAPTCHA_URL}
+
+app:
+  stomp:
+    relay:
+      enabled: ${STOMP_RELAY_ENABLED:true}

@@ -1,17 +1,23 @@
 package com.example.SocialMedia.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompReactorNettyCodec;
+import org.springframework.messaging.tcp.TcpOperations;
+import org.springframework.messaging.tcp.reactor.ReactorNettyTcpClient;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import reactor.netty.tcp.TcpClient;
 
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
+@Slf4j
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketTokenFilter webSocketTokenFilter;
@@ -28,6 +34,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${spring.rabbitmq.stomp.port}")
     private int rabbitStompPort;
 
+    @Value("${spring.rabbitmq.virtual-host:/}")
+    private String rabbitVhost;
+
+    @Value("${spring.rabbitmq.stomp.ssl-enabled:true}")
+    private boolean rabbitStompSslEnabled;
+
+    @Value("${app.stomp.relay.enabled:true}")
+    private boolean stompRelayEnabled;
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
@@ -40,13 +55,39 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableStompBrokerRelay("/topic", "/queue", "/exchange")
-                .setRelayHost(rabbitHost)
-                .setRelayPort(rabbitStompPort)
-                .setClientLogin(rabbitUser)
-                .setClientPasscode(rabbitPass)
-                .setSystemLogin(rabbitUser)
-                .setSystemPasscode(rabbitPass);
+        if (stompRelayEnabled) {
+            TcpClient tcpClient = TcpClient.create()
+                    .host(rabbitHost)
+                    .port(rabbitStompPort);
+
+            if (rabbitStompSslEnabled) {
+                tcpClient = tcpClient.secure();
+            }
+
+            TcpOperations<byte[]> relayTcpClient = new ReactorNettyTcpClient<>(tcpClient, new StompReactorNettyCodec());
+
+            registry.enableStompBrokerRelay("/topic", "/queue", "/exchange")
+                    .setRelayHost(rabbitHost)
+                    .setRelayPort(rabbitStompPort)
+                    .setClientLogin(rabbitUser)
+                    .setClientPasscode(rabbitPass)
+                    .setSystemLogin(rabbitUser)
+                    .setSystemPasscode(rabbitPass)
+                    .setVirtualHost(rabbitVhost)
+                    .setTcpClient(relayTcpClient)
+                    .setSystemHeartbeatSendInterval(10000)
+                    .setSystemHeartbeatReceiveInterval(10000);
+
+            log.info(
+                    "WebSocket broker mode: STOMP relay {}:{} (sslEnabled={}, vhost={})",
+                    rabbitHost,
+                    rabbitStompPort,
+                    rabbitStompSslEnabled,
+                    rabbitVhost);
+        } else {
+            registry.enableSimpleBroker("/topic", "/queue", "/exchange");
+            log.warn("WebSocket broker mode: in-memory simple broker (STOMP relay disabled)");
+        }
 
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");
