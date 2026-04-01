@@ -135,6 +135,9 @@ app:
   stomp:
     relay:
       enabled: ${STOMP_RELAY_ENABLED:true}
+  cookie:
+    secure: ${COOKIE_SECURE:true}
+    same-site: ${COOKIE_SAME_SITE:None}
 
 management:
   endpoints:

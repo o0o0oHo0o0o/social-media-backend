@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class CookieServiceImpl implements CookieService {
 
+    private static final String COOKIE_PATH = "/";
+
     @Value("${jwt.access.token.cookie.name}")
     private String ACCESS_TOKEN_COOKIE = "access_token";
 
@@ -20,14 +22,21 @@ public class CookieServiceImpl implements CookieService {
 
     @Value("${jwt.refresh.token.ttl}")
     private int refreshExpiration;
+
+    @Value("${app.cookie.secure:true}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.same-site:None}")
+    private String cookieSameSite;
+
     @Override
     public void addAccessTokenCookie(HttpServletResponse response, String token) {
-        addSecureCookie(response, ACCESS_TOKEN_COOKIE, token, accessExpiration/1000);
+        addSecureCookie(response, ACCESS_TOKEN_COOKIE, token, accessExpiration / 1000);
     }
 
     @Override
     public void addRefreshTokenCookie(HttpServletResponse response, String token) {
-        addSecureCookie(response, REFRESH_TOKEN_COOKIE, token, refreshExpiration/1000);
+        addSecureCookie(response, REFRESH_TOKEN_COOKIE, token, refreshExpiration / 1000);
 
     }
 
@@ -35,25 +44,27 @@ public class CookieServiceImpl implements CookieService {
     public void clearCookie(HttpServletResponse response, String name) {
         Cookie cookie = new Cookie(name, null);
         cookie.setMaxAge(0);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setAttribute("SameSite", "Lax");
+        applyCookiePolicy(cookie);
         response.addCookie(cookie);
     }
+
     @Override
     public void clearAllAuthCookie(HttpServletResponse response) {
         clearCookie(response, ACCESS_TOKEN_COOKIE);
         clearCookie(response, REFRESH_TOKEN_COOKIE);
     }
+
     private void addSecureCookie(HttpServletResponse response, String name, String value, int maxAgeInSeconds) {
         Cookie cookie = new Cookie(name, value);
         cookie.setMaxAge(maxAgeInSeconds);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-//        cookie.setDomain("localhost");
-        cookie.setSecure(false);
-        cookie.setAttribute("SameSite", "Lax");
+        applyCookiePolicy(cookie);
         response.addCookie(cookie);
+    }
+
+    private void applyCookiePolicy(Cookie cookie) {
+        cookie.setPath(COOKIE_PATH);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(cookieSecure);
+        cookie.setAttribute("SameSite", cookieSameSite);
     }
 }
