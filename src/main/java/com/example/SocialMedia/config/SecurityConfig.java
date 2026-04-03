@@ -38,6 +38,7 @@ public class SecurityConfig {
         private String frontendUrl;
         private final CorsProperties corsProperties;
         public static String[] PUBLIC_ENDPOINTS = {
+                        "/",
                         "/auth/register",
                         "/auth/login",
                         "/verification/**",
