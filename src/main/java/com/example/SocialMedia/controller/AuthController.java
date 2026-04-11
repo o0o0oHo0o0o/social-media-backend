@@ -46,6 +46,7 @@ public class AuthController {
     private String REFRESH_TOKEN_COOKIE = "refresh_token";
 
     private final UserMapper userMapper;
+
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(
             @RequestBody RegisterRequest registerRequest) {
@@ -58,16 +59,14 @@ public class AuthController {
         try {
             Optional<User> existingUserOpt = authService.findUserByIdentifier(
                     registerRequest.getIdentifier(),
-                    registerRequest.getChannel()
-            );
+                    registerRequest.getChannel());
             if (existingUserOpt.isPresent() && existingUserOpt.get().isVerified()) {
                 throw new IllegalArgumentException("Email hoặc SĐT này đã được sử dụng.");
             }
             if (registerRequest.getChannel() == com.example.SocialMedia.constant.OtpChannel.EMAIL) {
                 otpService.sendOtp(
                         registerRequest.getIdentifier(),
-                        registerRequest.getChannel()
-                );
+                        registerRequest.getChannel());
             }
             authService.cacheRegistrationData(registerRequest, SIGNUP_KEY_PREFIX, SIGNUP_EXPIRY_MINUTES);
             RegisterResponse registerResponse = getRegisterResponse(registerRequest);
@@ -99,19 +98,42 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @RequestBody LoginRequest loginRequest,
-            HttpServletResponse response){
-        User user = authService.login(loginRequest);
-        LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setMessage("Successfully logged in!");
-        authService.generateAndSetCookie(response, user);
-        return new ResponseEntity<>(loginResponse, HttpStatus.OK);
+            HttpServletResponse response) {
+        try {
+            User user = authService.login(loginRequest);
+            LoginResponse loginResponse = new LoginResponse();
+            loginResponse.setMessage("Successfully logged in!");
+            authService.generateAndSetCookie(response, user);
+            return new ResponseEntity<>(loginResponse, HttpStatus.OK);
+        } catch (Exception ex) {
+            Throwable rootCause = ex;
+            while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+                rootCause = rootCause.getCause();
+            }
+
+            logger.error(
+                    "[LOGIN_FAILED] identifier={}, message={}, rootCauseType={}, rootCauseMessage={}",
+                    loginRequest.getIdentifier(),
+                    ex.getMessage(),
+                    rootCause.getClass().getName(),
+                    rootCause.getMessage(),
+                    ex);
+
+            LoginResponse errorResponse = new LoginResponse();
+            errorResponse.setMessage(rootCause.getMessage() != null ? rootCause.getMessage() : "Login failed");
+
+            if (ex instanceof org.springframework.security.authentication.BadCredentialsException) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDto> getCurrentUser(
-            @AuthenticationPrincipal User currentUser
-    ) {
-        if(currentUser == null) {
+            @AuthenticationPrincipal User currentUser) {
+        if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         User user = authService.findUserByIdentifier(currentUser.getEmail())
@@ -119,6 +141,7 @@ public class AuthController {
 
         return ResponseEntity.ok(userMapper.toUserProfileDto(user));
     }
+
     @PostMapping("/refresh")
     @Transactional
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
@@ -156,6 +179,7 @@ public class AuthController {
 
         return ResponseEntity.ok("{\"ok\":true}");
     }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         // Xoá cookies auth
